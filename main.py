@@ -82,11 +82,13 @@ def create_and_train_model(X_train, Y_train, model_path):
     return network
 
 def main():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
     # Set file paths based on added MNIST Datasets
-    training_images_filepath = './mnist-dataset/train-images.idx3-ubyte'
-    training_labels_filepath = './mnist-dataset/train-labels.idx1-ubyte'
-    test_images_filepath = './mnist-dataset/t10k-images.idx3-ubyte'
-    test_labels_filepath = './mnist-dataset/t10k-labels.idx1-ubyte'
+    training_images_filepath = os.path.join(script_dir, 'mnist-dataset', 'train-images.idx3-ubyte')
+    training_labels_filepath = os.path.join(script_dir, 'mnist-dataset', 'train-labels.idx1-ubyte')
+    test_images_filepath = os.path.join(script_dir, 'mnist-dataset', 't10k-images.idx3-ubyte')
+    test_labels_filepath = os.path.join(script_dir, 'mnist-dataset', 't10k-labels.idx1-ubyte')
     
     # Load MNIST dataset
     print('Loading MNIST dataset...')
