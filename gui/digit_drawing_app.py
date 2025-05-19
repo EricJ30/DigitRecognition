@@ -14,7 +14,7 @@ import tkinter as tk
 from tkinter import Canvas, Button, Frame, Label, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.cm as cm
-
+import sys
 from models.mcp import MCP  # or whatever class/function is in mcp.py
 from models.dense import Dense
 from models.relu import ReLU
@@ -23,7 +23,9 @@ from models.layer import Layer
 from utils.mnist_dataloader import *
 from utils.math_utils import *
 class DigitDrawingApp:
+    
     def __init__(self, root, model):
+        
         self.root = root
         self.root.title("Digit Classifier - Draw & Predict")
         self.model = model
@@ -99,6 +101,7 @@ class DigitDrawingApp:
         
         # Initialize with pencil mode
         self.use_pencil()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
     def draw_grid(self):
         """Draw the grid lines on the canvas"""
@@ -374,3 +377,6 @@ class DigitDrawingApp:
         
         # Display the plot
         self.canvas_plt.draw()
+    def on_closing(self):
+        self.root.quit()
+        self.root.destroy()
