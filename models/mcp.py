@@ -64,7 +64,7 @@ class MCP:
         
         return np.mean(loss)
     
-    def train(self, X_train, y_train, n_epochs=25, batch_size=32):
+    def train(self, X_train, y_train, n_epochs=60, batch_size=100):
         """Train the network for n_epochs"""
         train_log = []        
         

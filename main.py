@@ -15,8 +15,6 @@ from tkinter import Canvas, Button, Frame, Label, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.cm as cm
 
-# main.py
-
 from models.mcp import MCP
 from models.dense import Dense
 from models.relu import ReLU
@@ -26,6 +24,12 @@ from utils.mnist_dataloader import *
 from utils.math_utils import *
 
 from gui.digit_drawing_app import DigitDrawingApp
+
+# info: stochastic gradient descent model
+# ReLU activation functoin
+# binary cross-entropy
+# 784 x 100 x 200 x 10 parameters
+# dense architecture
 
 def train_or_load_model(X_train, Y_train, X_test, Y_test, model_path='mnist_model.pkl', force_train=False):
     """Train a new model or load an existing one"""
@@ -59,7 +63,7 @@ def create_and_train_model(X_train, Y_train, model_path):
     network.add_layer(ReLU())
     network.add_layer(Dense(200, output_size))
     
-    train_log = network.train(X_train, Y_train, n_epochs=20, batch_size=64)
+    train_log = network.train(X_train, Y_train, n_epochs=60, batch_size=100)
     
     # Save the trained model
     network.save_model(model_path)
