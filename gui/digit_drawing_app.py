@@ -181,7 +181,7 @@ class DigitDrawingApp:
         img_2d = original_img.reshape(28, 28)
         
         # Sigma controls blur intensity - adjust this parameter as needed
-        sigma = 1.0
+        sigma = 1
         blurred_img_2d = gaussian_filter(img_2d, sigma=sigma)
         
         # Reshape back to model input format and normalize
