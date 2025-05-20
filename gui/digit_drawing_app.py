@@ -19,7 +19,7 @@ from models.mcp import MCP  # or whatever class/function is in mcp.py
 from models.dense import Dense
 from models.relu import ReLU
 from models.layer import Layer
-
+from scipy.ndimage import gaussian_filter
 from utils.mnist_dataloader import *
 from utils.math_utils import *
 class DigitDrawingApp:
@@ -174,8 +174,19 @@ class DigitDrawingApp:
         self.canvas_plt.draw()
     
     def predict(self):
-        # Normalize the image (0-1 scale)
-        img = normalize(self.drawing_grid.flatten().reshape(1, -1))
+        # Get the original binary drawing
+        original_img = self.drawing_grid.flatten().reshape(1, -1)
+        
+        # Apply Gaussian blur to the image (reshape to 28x28 for spatial operations)
+        img_2d = original_img.reshape(28, 28)
+        
+        # Sigma controls blur intensity - adjust this parameter as needed
+        sigma = 1.0
+        blurred_img_2d = gaussian_filter(img_2d, sigma=sigma)
+        
+        # Reshape back to model input format and normalize
+        img = normalize(blurred_img_2d.flatten().reshape(1, -1))
+        img = img.reshape(-1, 1, 28, 28)
         
         # Get prediction probabilities
         probs = self.model.predict_proba(img)[0]
@@ -191,6 +202,10 @@ class DigitDrawingApp:
         for i, (idx, prob_label) in enumerate(zip(top_indices, self.prob_labels)):
             prob_label.config(text=f"Digit {idx}: {probs[idx]:.4f} ({probs[idx]*100:.1f}%)")
         
+        # Optional: Display both original and blurred image for comparison
+        # This requires you to have an additional canvas/display area in your UI
+        # If you want to add this, you'll need to implement a method to update that display
+        
         # Visualize network
         self.visualize_network(img)
     
@@ -202,17 +217,26 @@ class DigitDrawingApp:
         # Get all layer activations
         activations = self.model.get_layer_activations(input_data)
         
-        # Layer sizes (including input and output)
-        layer_sizes = [input_data.shape[1]]  # Input layer
+        # Identify and collect only Dense layers (plus input and output)
+        dense_layers = []
+        dense_layer_indices = []
         
-        # Add sizes of hidden layers and output layer
-        current_layer_idx = 0
-        for layer in self.model.layers:
+        # Add input layer
+        dense_layers.append({"type": "input", "size": input_data.shape[1]})
+        
+        # Scan through model layers to find Dense layers
+        for i, layer in enumerate(self.model.layers):
             if isinstance(layer, Dense):
-                layer_sizes.append(layer.weights.shape[1])
-                current_layer_idx += 1
-            else:  # For non-Dense layers like ReLU
-                current_layer_idx += 1
+                dense_layers.append({
+                    "type": "dense", 
+                    "size": layer.weights.shape[1],
+                    "weights": layer.weights,
+                    "index": i
+                })
+                dense_layer_indices.append(i)
+        
+        # Extract layer sizes for visualization (including input layer)
+        layer_sizes = [layer["size"] for layer in dense_layers]
         
         # Calculate positions for nodes with special handling for output layer
         layer_positions = []
@@ -228,14 +252,14 @@ class DigitDrawingApp:
             # Special handling for output layer (last layer)
             if l == len(layer_sizes) - 1:
                 # Make output layer nodes larger and more spread out
-                spacing = 13  # Larger spacing for output layer
+                spacing = 10  # Larger spacing for output layer
                 # Center the output layer vertically
                 start_pos = -spacing * (size - 1) / 2
                 for i in range(size):
                     positions.append(start_pos + i * spacing)
             else:
                 # Scale vertical spacing based on layer size for other layers
-                spacing = max(0.2, 12.0 / size)  # Smaller nodes = smaller spacing
+                spacing = max(0.6, 12.0 / size)  # Smaller nodes = smaller spacing
                 start_pos = -spacing * (size - 1) / 2
                 for i in range(size):
                     positions.append(start_pos + i * spacing)
@@ -246,12 +270,10 @@ class DigitDrawingApp:
         connection_threshold = 0.05  # Show connections > 5% of max weight
         
         # Draw the connections between layers
-        for l in range(len(layer_sizes) - 1):
-            layer_idx = l * 2  # Adjust for ReLU layers
-            
-            # For Dense layers, get weights
-            if isinstance(self.model.layers[layer_idx], Dense):
-                weights = self.model.layers[layer_idx].weights
+        for l in range(len(dense_layers) - 1):
+            # For Dense layers, get weights (skip input to first hidden if that first hidden is not Dense)
+            if l > 0:  # Not the input layer
+                weights = dense_layers[l]["weights"]
                 max_weight = np.max(np.abs(weights))
                 
                 # If connecting to output layer, show all connections
@@ -293,14 +315,21 @@ class DigitDrawingApp:
             if l == 0:
                 layer_activations = input_data[0].reshape(-1)  # Input layer
             else:
-                layer_idx = l - 1  # Adjust for layer indexing
-                layer_activations = activations[layer_idx][0]
+                # Find the corresponding activation based on the actual layer index
+                layer_idx = dense_layer_indices[l-1]  # Adjust for layer indexing
+                
+                # Make sure we're accessing a valid index in the activations list
+                if layer_idx < len(activations):
+                    layer_activations = activations[layer_idx][0]
+                else:
+                    # Fallback if activations aren't available
+                    layer_activations = np.zeros(dense_layers[l]["size"])
             
             # Normalize activations to 0-1 for color mapping
-            if np.max(layer_activations) > np.min(layer_activations):
+            if len(layer_activations) > 0 and np.max(layer_activations) > np.min(layer_activations):
                 act_normalized = (layer_activations - np.min(layer_activations)) / (np.max(layer_activations) - np.min(layer_activations))
             else:
-                act_normalized = np.zeros_like(layer_activations)
+                act_normalized = np.zeros(dense_layers[l]["size"])
             
             # For very large layers, use sampling to avoid excessive nodes
             if len(positions) > 200:
@@ -325,8 +354,8 @@ class DigitDrawingApp:
                     # Special handling for output layer
                     if l == len(layer_sizes) - 1:
                         # Use probability for node size in output layer
-                        prob = probs[i]
-                        size = node_size  #* (0.5 + 2.0 * prob)  # Size ranges from 50% to 250% based on probability
+                        prob = probs[i] if i < len(probs) else 0
+                        size = node_size  # Size previously scaled by probability - now just fixed
                         
                         # Highlight the predicted digit
                         if i == predicted_digit:
@@ -350,11 +379,16 @@ class DigitDrawingApp:
             
             # Add labels for layers
             if l == 0:
-                self.ax.text(l, positions[0] - 4, "Input\nLayer", ha='center', fontsize=10)
+                self.ax.text(l, positions[0] - 12, "Input\nLayer", ha='center', fontsize=12, fontweight='bold')
             elif l == len(layer_positions) - 1:
                 self.ax.text(l, positions[-1] + 4, "Output\nLayer", ha='center', fontsize=12, fontweight='bold')
             else:
-                self.ax.text(l, positions[0] - 4, f"Hidden\nLayer {l}", ha='center', fontsize=10)
+                # Determine the actual layer number based on the original layer indices
+                if l == 1:  # First hidden layer 
+                    layer_name = f"Dense Layer 1\n(After CNN layers)"
+                else:
+                    layer_name = f"Dense Layer {l}"
+                self.ax.text(l, positions[0] - 12, layer_name, ha='center', fontsize=12, fontweight='bold')
         
         # Set axis limits and remove ticks
         self.ax.set_xlim(-0.5, len(layer_sizes) - 0.5)

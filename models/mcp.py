@@ -2,7 +2,7 @@ import numpy as np
 import pickle
 from models.layer import Layer
 from utils.math_utils import *
-
+import time
 class MCP:
     """Multi-layer perceptron neural network"""
     def __init__(self):
@@ -64,19 +64,26 @@ class MCP:
         
         return np.mean(loss)
     
-    def train(self, X_train, y_train, n_epochs=60, batch_size=100):
+    def train(self, X_train, y_train, n_epochs=20, batch_size=8):
         """Train the network for n_epochs"""
         train_log = []        
-        
-        for epoch in range(n_epochs):        
+        # Before feeding to network
+
+        for epoch in range(n_epochs):     
+            start = time.time()   
             for i in range(0, X_train.shape[0], batch_size):
                 # Get pair of (X, y) of the current minibatch/chunk
-                x_batch = np.array([x.flatten() for x in X_train[i:i + batch_size]])
+                if len(X_train.shape) == 4:  # CNN input
+                    x_batch = X_train[i:i + batch_size].reshape(-1, 1, 28, 28)
+                else:  # Dense input
+                    x_batch = np.array([x.flatten() for x in X_train[i:i + batch_size]])
+
                 y_batch = np.array([y for y in y_train[i:i + batch_size]])        
                 self.train_batch(x_batch, y_batch)
     
             train_log.append(np.mean(self.predict(X_train) == y_train.argmax(axis=-1)))                
-            print(f"Epoch: {epoch + 1}, Train accuracy: {train_log[-1]}")                        
+            print(f"Epoch: {epoch + 1}, Train accuracy: {train_log[-1]}")   
+            print(f"Batch took {time.time() - start:.2f}s")                     
         return train_log
     
     def predict(self, X):

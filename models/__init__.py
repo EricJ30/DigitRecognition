@@ -1,8 +1,7 @@
-# Import classes you want to make available directly from the models package
 from .mcp import MCP
 from .dense import Dense
 from .relu import ReLU
 from .layer import Layer
-
-# This allows usage like:
-# from models import MCP, Dense
+from .conv2D import Conv2D
+from .flatten import Flatten
+from .maxpool2D import MaxPool2D
