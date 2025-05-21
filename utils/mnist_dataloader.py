@@ -3,7 +3,7 @@ from array import array
 import numpy as np
 
 class MnistDataLoader:
-    """MNIST dataset loader class"""
+    #MNIST dataset loader class
     def __init__(self, training_images_filepath, training_labels_filepath,
                  test_images_filepath, test_labels_filepath):
         self.training_images_filepath = training_images_filepath
@@ -12,7 +12,6 @@ class MnistDataLoader:
         self.test_labels_filepath = test_labels_filepath
     
     def read_images_labels(self, images_filepath, labels_filepath):
-        """Read image and label data files"""
         labels = []
         with open(labels_filepath, 'rb') as file:
             magic, size = struct.unpack(">II", file.read(8))
@@ -36,7 +35,6 @@ class MnistDataLoader:
         return images, labels
             
     def load_data(self):
-        """Load MNIST training and test datasets"""
         x_train, y_train = self.read_images_labels(self.training_images_filepath, self.training_labels_filepath)
         x_test, y_test = self.read_images_labels(self.test_images_filepath, self.test_labels_filepath)
         return (x_train, y_train), (x_test, y_test)

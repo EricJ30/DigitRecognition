@@ -30,12 +30,11 @@ from gui.digit_drawing_app import DigitDrawingApp
 # info: stochastic gradient descent model
 # Lazy ReLU activation functoin
 # binary cross-entropy
-# 784 x 784 x 100 x 10 dense parameters
-# 2 layers of CNN, 2 layers of dense
+# 80758 parameters
+# 2 layers of CNN, 1 layer of dense
 # Input image is gaussian blurred to better match hand-written data
 
 def train_or_load_model(X_train, Y_train, X_test, Y_test, model_path='mnist_model.pkl', force_train=False):
-    """Train a new model or load an existing one"""
     if not force_train and os.path.exists(model_path):
         print(f"Loading existing model from {model_path}...")
         network = MCP.load_model(model_path)
@@ -56,7 +55,6 @@ def train_or_load_model(X_train, Y_train, X_test, Y_test, model_path='mnist_mode
     return network
 
 def create_and_train_model(X_train, Y_train, model_path):
-    """Create and train a CNN model"""
     X_train = X_train.reshape(-1, 1, 28, 28)
     # Expecting X_train shape: [batch, 1, 28, 28]
     output_size = Y_train.shape[1]
@@ -116,8 +114,8 @@ def main():
     
     # Check if user wants to force train a new model
     force_train = False
-    response = input("Do you want to force training a new model? (y/n, default: n): ")
-    if response.lower() == 'y':
+    response = input("Do you want to use the existing trained model (if exists)? (y/n, default: y): ")
+    if response.lower() == 'n':
         force_train = True
     
     # Train or load the model

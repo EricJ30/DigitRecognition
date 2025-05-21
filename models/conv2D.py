@@ -1,11 +1,12 @@
 import numpy as np
 from models.layer import Layer
 
+"""
+input_data: (batch, channels, height, width)
+Returns a 2D matrix (col) where each row is a flattened receptive field
+"""
 def im2col(input_data, kernel_size, stride, padding):
-    """
-    input_data: (batch, channels, height, width)
-    Returns a 2D matrix (col) where each row is a flattened receptive field
-    """
+
     N, C, H, W = input_data.shape
     KH, KW = kernel_size, kernel_size
     out_h = (H + 2 * padding - KH) // stride + 1
@@ -23,11 +24,11 @@ def im2col(input_data, kernel_size, stride, padding):
     col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
     return col, out_h, out_w
 
-
+"""
+Converts 2D matrix back to 4D image (for gradient propagation)
+"""
 def col2im(col, input_shape, kernel_size, stride, padding):
-    """
-    Converts 2D matrix back to 4D image (for gradient propagation)
-    """
+    
     N, C, H, W = input_shape
     KH, KW = kernel_size, kernel_size
     out_h = (H + 2 * padding - KH) // stride + 1

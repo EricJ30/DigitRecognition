@@ -3,18 +3,19 @@ import pickle
 from models.layer import Layer
 from utils.math_utils import *
 import time
+
+# Multi-layer perceptron neural network
 class MCP:
-    """Multi-layer perceptron neural network"""
     def __init__(self):
         self.layers = []
         
     def add_layer(self, layer):
-        """Add a layer to the network"""
         self.layers.append(layer)
     
-    def forward(self, X):
-        """Compute activations of all network layers by applying them sequentially.
+    """Compute activations of all network layers by applying them sequentially.
         Return a list of activations for each layer."""
+    def forward(self, X):
+        
         activations = []
         input = X
         
@@ -28,7 +29,6 @@ class MCP:
         return activations
     
     def get_layer_activations(self, X):
-        """Get all layer activations for visualization"""
         layer_activations = []
         input_data = X
         
@@ -43,9 +43,6 @@ class MCP:
         return layer_activations
     
     def train_batch(self, X, y):
-        """Train network on a batch of data.
-        We first need to run forward to get all layer activations.
-        Then we can run layer.backward going from last to first layer."""
         
         layer_activations = self.forward(X)
         layer_inputs = [X] + layer_activations  # layer_input[i] is an input for layer[i]
@@ -65,7 +62,6 @@ class MCP:
         return np.mean(loss)
     
     def train(self, X_train, y_train, n_epochs=20, batch_size=8):
-        """Train the network for n_epochs"""
         train_log = []        
         # Before feeding to network
 
@@ -85,14 +81,15 @@ class MCP:
             print(f"Epoch: {epoch + 1}, Train accuracy: {train_log[-1]}")   
             print(f"Batch took {time.time() - start:.2f}s")                     
         return train_log
-    
+    #Compute network predictions. Returning indices of largest Logit probability
     def predict(self, X):
-        """Compute network predictions. Returning indices of largest Logit probability"""
+        
         logits = self.forward(X)[-1]
         return logits.argmax(axis=-1)
     
+    #Return probability distribution over classes
     def predict_proba(self, X):
-        """Return probability distribution over classes"""
+
         logits = self.forward(X)[-1]
         # Apply softmax to get probabilities
         exp_logits = np.exp(logits)
@@ -100,7 +97,6 @@ class MCP:
         return probs
         
     def save_model(self, filepath):
-        """Save the model to a file"""
         try:
             with open(filepath, 'wb') as f:
                 pickle.dump(self, f)
